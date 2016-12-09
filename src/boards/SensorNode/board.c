@@ -62,6 +62,11 @@ Uart_t Uart1;
 Uart_t UartUsb;
 #endif
 
+#ifdef USE_UART1
+uint8_t MyTxBuffer[128];
+uint8_t MyRxBuffer[128];
+#endif
+
 /*!
  * Initializes the unused GPIO to a know status
  */
@@ -107,6 +112,8 @@ static void OnCalibrateSystemWakeupTimeTimerEvent( void )
 
 void BoardInitPeriph( void )
 {
+    uint8_t data;
+    
     GpioInit( &DcDcEnable, DC_DC_EN, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 1 );
 
     /* Init the GPIO extender pins */
@@ -139,9 +146,25 @@ void BoardInitPeriph( void )
     // Init SAR
     SX9500Init( );
 
+#if 0
     // Init GPS
     GpsInit( );
+#endif
 
+#ifdef USE_UART1
+        FifoInit( &Uart1.FifoTx, MyTxBuffer, 128 );
+        FifoInit( &Uart1.FifoRx, MyRxBuffer, 128 );
+        UartMcuInit( &Uart1, UART_1, UART_TX, UART_RX );
+        UartMcuConfig( &Uart1, RX_TX, 115200, UART_8_BIT, UART_1_STOP_BIT, NO_PARITY, NO_FLOW_CTRL );
+        while( UartMcuPutChar( &Uart1, 0x31) != 0 ){ };
+		while( 1 )
+		{
+			if( UartMcuGetChar( &Uart1, &data ) == 0 )
+			{
+				 while( UartMcuPutChar( &Uart1, data) != 0 ){ };
+			}
+		}
+#endif
     // Switch LED 1, 2, 3, 4 OFF
     GpioWrite( &Led1, 1 );
     GpioWrite( &Led2, 1 );
